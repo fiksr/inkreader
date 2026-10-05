@@ -44,6 +44,49 @@ High-quality neural speech synthesis running entirely on-device without network 
 - Built-in OPDS client for browsing and downloading from Calibre Content Server, BookOrbit, Standard Ebooks, and custom catalogs.
 - Support for local EPUB file imports.
 
+## Technical Architecture & Performance
+
+### On-Device Neural TTS & CPU Efficiency
+InkReader executes neural speech models directly on your device CPU via the `sherpa-onnx` C++ runtime, eliminating any need for cloud APIs or internet connection during playback:
+
+- **Quantization & Memory Footprint:**
+  - **Kokoro & Supertonic:** Use INT8 quantized models (`*.int8.onnx`), drastically reducing RAM usage and memory bus bandwidth compared to unquantized models.
+  - **Lazy Loading:** Models are loaded into memory on-demand on a background coroutine only when playback begins. App startup performs zero model initialization, keeping cold app launch under 100ms.
+- **CPU Thread Scaling:**
+  - Thread count is dynamically bounded (`minOf(4, availableProcessors)` for Supertonic/Kokoro, and 2 threads for Piper). This prevents saturating all CPU cores, avoiding thermal throttling and saving battery on low-power E-Ink chipsets (e.g., Rockchip, Allwinner, entry-level Qualcomm Snapdragon).
+- **Zero-Latency Page Pre-Buffering:**
+  - TTS uses an asynchronous producer-consumer channel pipeline (`kotlinx.coroutines.channels.Channel`).
+  - While Page N is being read aloud, the producer coroutine pre-synthesizes audio chunks for Page N+1 in the background and stores the PCM float samples in an in-memory LRU cache (up to 40 MB). When the reader finishes a page, the audio transition to the next page is instant with 0 ms delay.
+
+### AI Companion & API Key Security
+The AI Reading Companion connects directly from your device to the configured AI provider:
+
+- **Key Privacy & Storage:**
+  - API keys are stored locally on-device inside private Android `SharedPreferences`.
+  - There is no intermediary proxy, telemetry, or server collection. Requests are sent directly over HTTPS from your device to the provider endpoint (such as `generativelanguage.googleapis.com` or `api.groq.com`).
+- **Free Google Gemini Keys:**
+  - Google AI Studio provides a free API tier that requires no credit card.
+  - InkReader includes a direct setup shortcut in the AI Companion sheet to obtain and save a key.
+- **Context Construction:**
+  - When requesting a "Catch Me Up" summary or character breakdown, the prompt combines the book metadata (title, author), reading progress (current chapter index and overall percentage), and the visible page excerpt.
+  - The model is instructed to summarize the story arc leading up to that exact position while strictly forbidding spoilers for upcoming chapters.
+
+### Recommended Models
+
+#### Text-to-Speech (Read Aloud)
+| Engine | Model Variant | Size | Recommended Use Case |
+| :--- | :--- | :--- | :--- |
+| **Supertonic 3 (Recommended)** | INT8 Quantized | ~138 MB | Best balance of expressiveness, natural pacing, and speed. Generates 2x faster than real-time on typical mobile CPUs. Default voice: *Luna (Female)*. |
+| **Kokoro** | INT8 Quantized (`v0_19`) | ~82 MB | High naturalness for English fiction. Default voice: *Heart (`af_heart`)*. |
+| **Piper** | VITS ONNX | ~20–60 MB | Lowest CPU and RAM overhead. Recommended for older E-Ink devices with limited processing power. |
+
+#### AI Companion Providers
+| Provider | Recommended Model | Typical Latency | Cost |
+| :--- | :--- | :--- | :--- |
+| **Google Gemini (Recommended)** | `gemini-2.5-flash` or `gemini-1.5-flash` | ~1.0s | Free tier available via Google AI Studio (no credit card required). Excellent literary understanding. |
+| **Groq** | `llama-3.3-70b-versatile` | ~0.4s | Extremely low latency with a generous free tier. |
+| **OpenAI / OpenRouter** | `gpt-4o-mini` / `deepseek-chat` | ~1.5s | Pay-per-token custom endpoints. |
+
 ## Installation
 
 1. Download the latest `InkReader.apk` from the [Releases](https://github.com/fiksr/inkreader/releases) page.

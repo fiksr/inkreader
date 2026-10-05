@@ -1,6 +1,6 @@
 # InkReader
 
-An e-reader designed for Android and E-Ink devices (Onyx BOOX, Bigme, Meebook) as well as standard smartphones and tablets. It combines typography controls with offline neural text-to-speech, ambient background audio, OPDS catalog integration, and a spoiler-free AI literary companion.
+An Android e-reader for EPUBs, featuring offline neural text-to-speech, ambient audio, OPDS catalog integration, and an AI reading companion. Works on standard Android phones and tablets, with high-contrast display modes and screen refresh controls for Android-based E-Ink devices (such as Onyx BOOX, Bigme, and Meebook).
 
 ## Screenshots
 
@@ -17,7 +17,7 @@ More screenshots available in the [screenshots/](screenshots/) directory (Readin
 ## Features
 
 ### Reading & Typography
-- **E-Ink & OLED Display Optimization:** High-contrast pure black and white rendering modes, full-screen refresh toggle to clear ghosting, and keep-screen-on focus mode.
+- **E-Ink & OLED Display Optimization:** High-contrast pure black and white rendering modes, full-screen refresh toggle to clear ghosting, and keep-screen-on mode.
 - **EPUB Engine:** Fast pagination, customizable font family, custom font installation (.ttf/.otf), line spacing, text size, and paragraph indentation.
 - **Bionic Reading:** Optional focus mode highlighting the initial letters of each word.
 - **Reading Statistics:** Reading streak tracker, words-per-minute calculator, and 52-week activity heatmap.

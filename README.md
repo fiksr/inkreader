@@ -83,9 +83,10 @@ The AI Reading Companion connects directly from your device to the configured AI
 #### AI Companion Providers
 | Provider | Recommended Model | Typical Latency | Cost |
 | :--- | :--- | :--- | :--- |
-| **Google Gemini (Recommended)** | `gemini-2.5-flash` or `gemini-1.5-flash` | ~1.0s | Free tier available via Google AI Studio (no credit card required). Excellent literary understanding. |
+| **Google Gemini (Recommended)** | `gemini-3.8-flash` or `gemini-3.5-flash-lite` | ~0.8s | Free tier available via Google AI Studio (no credit card required). Fast, high-accuracy literary understanding. |
 | **Groq** | `llama-3.3-70b-versatile` | ~0.4s | Extremely low latency with a generous free tier. |
-| **OpenAI / OpenRouter** | `gpt-4o-mini` / `deepseek-chat` | ~1.5s | Pay-per-token custom endpoints. |
+| **OpenAI** | `gpt-6-luna` or `gpt-6.1-sol` | ~1.2s | Pay-per-token API endpoints. |
+| **DeepSeek / OpenRouter** | `deepseek-chat` or `deepseek-r1` | ~1.5s | Advanced reasoning and open-weights endpoints. |
 
 ## Installation
 

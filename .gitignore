@@ -24,6 +24,7 @@ build/
 # Large binaries & model packages
 *.apk
 *.ap_
+*.aab
 *.jar
 *.tar.bz2
 *.tar.gz
@@ -32,3 +33,9 @@ build/
 kokoro-int8-*
 supertonic-*
 piper-*
+
+# Keystores & Signing Secrets
+*.jks
+*.keystore
+keystore.properties
+

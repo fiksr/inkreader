@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>fikser — PM who ships without writing code</title>
+<meta name="description" content="Project Manager by day. Homelab and tool builder, and AI-assisted maker by night."/>
+<meta name="google-adsense-account" content="ca-pub-9948599977984090">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3a;
+    --accent: #7c6aff;
+    --accent2: #ff6a9b;
+    --accent3: #6affd4;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+.logo, 
+.mode-btn, 
+.input-label, 
+.discover-btn, 
+.vn-title, 
+.vn-number {
+  font-family: 'Playfair Display', serif;
+  letter-spacing: 0.05em; /* Reduced from 0.3em to prevent horizontal bloat */
+}
+
+.logo {
+  font-weight: 800;
+  text-transform: uppercase;
+}
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 80px 0 60px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .badge span {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent3);
+    margin-right: 6px;
+    vertical-align: middle;
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+/* Updated H1: Relaxed the squeeze and adjusted line-height */
+  h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1; /* Slightly tighter for a modern look, but not overlapping */
+    letter-spacing: -0.5px; /* Reduced from -1.5px to prevent letter collision */
+    margin-bottom: 24px;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bio {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 560px;
+    margin-bottom: 36px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .bio strong { color: var(--text); font-weight: 700; }
+
+  .hero-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,106,255,0.3); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+  .btn-kofi {
+    background: #FFDD00;
+    color: #000;
+  }
+
+  .btn-kofi:hover { transform: translateY(-1px); }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  /* ── Section ── */
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  /* ── Projects ── */
+  .projects {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .project-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: visible;
+    min-height: 180px;
+  }
+
+  .project-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .project-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .project-card:hover::before { opacity: 1; }
+
+  .project-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+/* Updated Project Name: Ensuring thick letters have breathing room */
+  .project-name {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text);
+    line-height: 1.4; /* Added to prevent the top/bottom of letters being cut off */
+    letter-spacing: -0.2px; /* Subtle squeeze, but much cleaner */
+  }
+
+  .project-desc {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .project-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .tag-live { border-color: rgba(106,255,212,0.4); color: var(--accent3); }
+  .tag-wip { border-color: rgba(255,200,100,0.4); color: #ffc864; }
+  .tag-api { border-color: rgba(124,106,255,0.4); color: var(--accent); }
+
+  /* ── Stack ── */
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 48px;
+  }
+
+  .stack-item {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 16px;
+  }
+
+  .footer-links a {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--accent); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    transform: translateY(20px);
+    transition: transform 0.25s ease;
+  }
+
+  .modal-overlay.active .modal-content {
+    transform: translateY(0);
+  }
+
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover {
+    color: var(--text);
+  }
+
+  .modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .modal-body strong {
+    color: var(--text);
+  }
+
+  .modal-body h3 {
+    color: var(--text);
+    font-size: 15px;
+    margin: 20px 0 8px;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .modal-body ul {
+    margin-left: 20px;
+    margin-bottom: 16px;
+  }
+
+  .modal-body li {
+    margin-bottom: 6px;
+  }
+
+  .modal-body code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent3);
+    font-size: 12px;
+  }
+
+  .meta-tag {
+    color: var(--accent);
+    font-size: 11px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="badge"><span></span>open to ideas &amp; collaborations</div>
+    <h1>PM who ships<br/>without writing<br/><em>a single line of code</em></h1>
+    <p class="bio">
+      Project Manager by day. Homelab and tool builder, game modder, and AI-assisted maker by night.
+      <strong>Gen X - Law, Justice, Philosophy, Tech, Sci-fi enthusiast.</strong> 
+    </p>
+    <div class="hero-links">
+      <a href="https://github.com/fiksr" target="_blank" class="btn btn-primary">⌥ GitHub</a>
+      <a href="https://ko-fi.com/fiksr" target="_blank" class="btn btn-kofi">☕ Ko-fi</a>
+      <a href="mailto:contact@fikser.xyz" class="btn btn-ghost">✉ Contact</a>
+    </div>
+  </section>
+
+  <hr class="divider"/>
+
+  <!-- Projects -->
+  <div class="section-label">// projects</div>
+  <div class="projects">
+
+    <a href="https://github.com/fiksr/inkreader" class="project-card">
+      <span class="project-icon">📖</span>
+      <div class="project-name">InkReader</div>
+      <div class="project-desc">Offline neural TTS e-reader for Android with on-device AI companion, ambient audio, and E-Ink mode.</div>
+      <span class="project-tag tag-live">v1 ready</span>
+    </a>
+
+    <a href="https://petcare.fikser.xyz" class="project-card">
+      <span class="project-icon">🐶</span>
+      <div class="project-name">Petcare</div>
+      <div class="project-desc">Jedan portal za sve vase ljubimce, pratite ishranu, zdravlje, veterinarske posete, pitajte AI za misljenje.</div>
+      <span class="project-tag tag-live">live</span>
+    </a>
+    
+    <a href="https://pretplate.lol" class="project-card">
+      <span class="project-icon">💵</span>
+      <div class="project-name">Pretplate.lol</div>
+      <div class="project-desc">Prati svoje pretplate. Uporedi sve servise u Srbiji.</div>
+      <span class="project-tag tag-live">live</span>
+    </a>
+    <a href="https://retrodaily.fikser.xyz/" class="project-card">
+      <span class="project-icon">🎮</span>
+      <div class="project-name">Retrodaily</div>
+      <div class="project-desc">RetroDaily - what should i play today? Connect your RetroAchievements account</div>
+      <span class="project-tag tag-live">live</span>
+    </a>
+
+
+    <!-- <a href="https://rapidapi.com" target="_blank" class="project-card"> -->
+      <!-- <span class="project-icon">🎙️</span> -->
+      <!-- <div class="project-name">Whisper API</div> -->
+      <!-- <div class="project-desc">Audio transcription API powered by OpenAI Whisper. Available on RapidAPI.</div> -->
+      <!-- <span class="project-tag tag-api">rapidapi</span> -->
+    <!-- </a> -->
+    <a href="https://cutkit.fikser.xyz" class="project-card">
+      <span class="project-icon">✂️</span>
+      <div class="project-name">CutKit</div>
+      <div class="project-desc">Free video tools — MP3 extractor, GIF maker, compressor, trimmer. No signup, no watermark.</div>
+      <span class="project-tag tag-live">live</span>
+    </a>
+
+    <a href="https://nichelab.xyz/" class="project-card">
+      <span class="project-icon">🎮</span>
+      <div class="project-name">Niche</div>
+      <div class="project-desc">Taste Discovery Across Mediums (Manga, VN, Books, Steam).</div>
+      <span class="project-tag tag-live">live</span>
+    </a>
+    <a href="https://touchgrass.fikser.xyz/" class="project-card">
+      <span class="project-icon">🎮</span>
+      <div class="project-name">Touchgrass</div>
+      <div class="project-desc">Let AI roast your screen time usage (upload screenshot).</div>
+      <span class="project-tag tag-live">live</span>
+    </a>
+    <a href="#" class="project-card">
+      <span class="project-icon">🎮</span>
+      <div class="project-name">Yu-No HD</div>
+      <div class="project-desc">Patching the classic visual novel YuNo pc 98 to run at 1440×1080 native resolution.</div>
+      <span class="project-tag tag-wip">in progress</span>
+    </a>
+    <a href="#" class="project-card">
+      <span class="project-icon">🖼️</span>
+      <div class="project-name">UpscaleKit</div>
+      <div class="project-desc">Manga &amp; pixel art upscaler using waifu2x. Built for retro games and anime artwork.</div>
+      <span class="project-tag tag-wip">coming soon</span>
+    </a>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Stack -->
+  <div class="section-label">// daily drivers</div>
+  <div class="stack">
+    <span class="stack-item">Proxmox</span>
+    <span class="stack-item">Home Assistant</span>
+    <span class="stack-item">n8n</span>
+    <span class="stack-item">Ollama</span>
+    <span class="stack-item">Docker</span>
+    <span class="stack-item">Nginx Proxy Manager</span>
+    <span class="stack-item">Jellyfin</span>
+    <span class="stack-item">Calibre-Web</span>
+    <span class="stack-item">Cloudflare</span>
+    <span class="stack-item">Oracle Cloud</span>
+    <span class="stack-item">Whisper</span>
+    <span class="stack-item">FastAPI</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <span class="footer-text">fikser.xyz — built with AI &amp; stubbornness</span>
+    <div class="footer-links">
+      <a href="https://github.com/fiksr" target="_blank">GitHub</a>
+      <a href="https://ko-fi.com/fiksr" target="_blank">Ko-fi</a>
+      <a href="https://cutkit.fikser.xyz" target="_blank">CutKit</a>
+      <a href="#privacy" onclick="openPrivacyModal(event)">Privacy Policy</a>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Privacy Policy Modal -->
+<div id="privacy-modal" class="modal-overlay" onclick="closePrivacyModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Privacy Policy — InkReader</h2>
+      <button class="modal-close" onclick="closePrivacyModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="meta-tag">Last Updated: October 6, 2026 &bull; Offline-First &bull; Zero Telemetry</p>
+      
+      <p><strong>InkReader</strong> is an offline-first Android e-reader application built by <strong>Fiksr</strong>. We believe your reading habits, library, annotations, and AI queries are strictly personal. <strong>InkReader does not collect analytics, track device identifiers, or operate cloud servers that log your activity.</strong></p>
+
+      <h3>1. Information We Do NOT Collect</h3>
+      <ul>
+        <li><strong>No Personal Identifiers:</strong> We do not collect names, emails, phone numbers, or advertising IDs.</li>
+        <li><strong>No Analytics or Tracking:</strong> There are no third-party tracking or advertising SDKs embedded in the app.</li>
+        <li><strong>No Reading Telemetry:</strong> What books you read, how long you read, your reading speed, and bookmarks remain entirely on your local device.</li>
+      </ul>
+
+      <h3>2. Data Stored Locally on Your Device</h3>
+      <ul>
+        <li><strong>E-books & Documents:</strong> Imported EPUB files are kept in private local app storage.</li>
+        <li><strong>Reading Progress & Stats:</strong> Bookmarks, reading heatmaps, words-per-minute calculations, and annotations are saved in your local database.</li>
+        <li><strong>Custom Files:</strong> User-imported fonts (<code>.ttf</code>/<code>.otf</code>) and ambient audio tracks remain on your local storage.</li>
+      </ul>
+
+      <h3>3. Network Connections & AI Providers</h3>
+      <p>Network activity only occurs when you intentionally trigger features that interact with external services:</p>
+      <ul>
+        <li><strong>AI Reading Companion:</strong> When you use AI features (e.g. "Catch Me Up" summaries or character explanations), requests are sent directly from your device over HTTPS to your chosen provider (Google Gemini, Groq, OpenAI, or DeepSeek/OpenRouter). API keys are stored privately on your device.</li>
+        <li><strong>Offline Neural TTS:</strong> Voice models (Supertonic, Kokoro, Piper) are downloaded on-demand from public repositories. Once downloaded, <strong>all speech synthesis runs 100% offline on your device CPU</strong>. No audio or text is sent to cloud servers during reading.</li>
+        <li><strong>OPDS Catalogs & Cloud Sync:</strong> Connections to OPDS catalogs (e.g. Standard Ebooks, Calibre) or sync services (BookOrbit, KoSync) occur directly between your device and that specific server address.</li>
+      </ul>
+
+      <h3>4. Android Permissions</h3>
+      <ul>
+        <li><code>INTERNET</code> &amp; <code>ACCESS_NETWORK_STATE</code>: User-triggered AI queries, OPDS browsing, sync, and one-time TTS voice downloads.</li>
+      </ul>
+
+      <h3>5. Contact</h3>
+      <p>For questions or feedback, visit <a href="https://github.com/fiksr/inkreader" target="_blank" style="color:var(--accent);">github.com/fiksr/inkreader</a> or email <code>contact@fikser.xyz</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openPrivacyModal(e) {
+    if (e) e.preventDefault();
+    document.getElementById('privacy-modal').classList.add('active');
+    history.pushState(null, null, '#privacy');
+  }
+
+  function closePrivacyModal(e) {
+    if (e) e.preventDefault();
+    document.getElementById('privacy-modal').classList.remove('active');
+    if (window.location.hash === '#privacy') {
+      history.pushState(null, null, window.location.pathname + window.location.search);
+    }
+  }
+
+  // Check URL hash on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#privacy' || window.location.search.includes('privacy')) {
+      openPrivacyModal();
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#privacy') {
+      openPrivacyModal();
+    } else {
+      document.getElementById('privacy-modal').classList.remove('active');
+    }
+  });
+</script>
+
+</html>

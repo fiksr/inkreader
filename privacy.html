@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Privacy Policy — InkReader | fikser</title>
+<meta name="description" content="Privacy Policy for InkReader Android application."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&family=Playfair+Display:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --border: #2a2a3a;
+    --accent: #7c6aff;
+    --accent2: #ff6a9b;
+    --accent3: #6affd4;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    padding: 40px 20px;
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  }
+
+  .back-link {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 12px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover {
+    color: var(--accent3);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .meta {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    background: rgba(106, 255, 212, 0.1);
+    color: var(--accent3);
+    border: 1px solid rgba(106, 255, 212, 0.3);
+    margin-left: 8px;
+  }
+
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 28px 0 12px;
+  }
+
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 16px 0 8px;
+  }
+
+  p {
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  strong {
+    color: var(--text);
+  }
+
+  ul {
+    margin-left: 20px;
+    margin-bottom: 16px;
+    color: var(--muted);
+  }
+
+  li {
+    margin-bottom: 6px;
+  }
+
+  code {
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent3);
+    font-size: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 12px;
+  }
+
+  th, td {
+    border: 1px solid var(--border);
+    padding: 10px;
+    text-align: left;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  td {
+    color: var(--muted);
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/" class="back-link">&larr; Back to fikser</a>
+
+  <h1>Privacy Policy — InkReader</h1>
+  <div class="meta">Last Updated: October 6, 2026 <span class="badge">Offline-First &bull; Zero Telemetry</span></div>
+
+  <p><strong>InkReader</strong> is an offline-first Android e-reader application developed by <strong>Fiksr</strong>. We are committed to protecting your personal data and respecting your privacy.</p>
+
+  <p><strong>Summary:</strong> InkReader does not track you, does not collect analytics or advertising identifiers, does not show ads, and does not operate cloud servers that store your books, annotations, or reading habits.</p>
+
+  <h2>1. Information We Do NOT Collect</h2>
+  <ul>
+    <li><strong>No Personal Identifiers:</strong> We do not collect names, email addresses, phone numbers, or hardware IDs.</li>
+    <li><strong>No Analytics or Telemetry:</strong> There are no third-party tracking or crashlytics telemetry SDKs embedded in the app.</li>
+    <li><strong>No Reading Telemetry:</strong> What books you read, how long you read, your reading speed, and bookmarks remain entirely on your local device.</li>
+  </ul>
+
+  <h2>2. Data Stored Locally on Your Device</h2>
+  <ul>
+    <li><strong>E-books & Documents:</strong> Imported EPUB files are kept in private local app storage.</li>
+    <li><strong>Reading Progress & Stats:</strong> Bookmarks, reading heatmaps, words-per-minute calculations, and annotations are saved in your local SQLite database.</li>
+    <li><strong>Custom Files:</strong> User-imported fonts (<code>.ttf</code>/<code>.otf</code>) and ambient audio tracks remain on your local storage.</li>
+  </ul>
+
+  <h2>3. Network Connections & AI Providers</h2>
+  <p>Network activity only occurs when you intentionally trigger features that interact with external services:</p>
+
+  <h3>A. AI Reading Companion</h3>
+  <ul>
+    <li><strong>Direct HTTPS Connection:</strong> When you use AI features (such as "Catch Me Up" summaries or character explanations), requests are sent directly from your device over HTTPS to your chosen provider (Google Gemini, Groq, OpenAI, or DeepSeek/OpenRouter). There is no intermediary proxy server.</li>
+    <li><strong>API Key Storage:</strong> Your API keys are saved on-device in private Android <code>SharedPreferences</code> and never shared with third parties.</li>
+    <li><strong>Context Sent:</strong> Only the required excerpt (book title, author, chapter index, and text chunk) is sent to complete the requested prompt.</li>
+  </ul>
+
+  <h3>B. Offline Neural TTS Voice Models</h3>
+  <ul>
+    <li>Voice models (Supertonic, Kokoro, Piper) are downloaded on-demand from public release repositories (e.g. GitHub / Hugging Face).</li>
+    <li>Once downloaded, <strong>all speech synthesis runs 100% offline on your device CPU</strong>. No audio or text is sent to cloud servers during reading.</li>
+  </ul>
+
+  <h3>C. OPDS Catalogs & Cloud Sync</h3>
+  <ul>
+    <li>If you connect to OPDS catalogs (e.g. Standard Ebooks, Calibre) or sync services (BookOrbit, KoSync), network communication occurs directly between your device and that specific server address.</li>
+  </ul>
+
+  <h2>4. Android Permissions Used</h2>
+  <table>
+    <thead>
+      <tr><th>Permission</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>android.permission.INTERNET</code></td><td>User-triggered AI queries, OPDS browsing, sync, and one-time TTS voice downloads.</td></tr>
+      <tr><td><code>android.permission.ACCESS_NETWORK_STATE</code></td><td>Checks internet connectivity prior to downloads or sync requests.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. Children’s Privacy</h2>
+  <p>InkReader does not knowingly collect or solicit any personal information from children under the age of 13.</p>
+
+  <h2>6. Contact Us</h2>
+  <p>If you have questions, feedback, or concerns regarding this Privacy Policy, please reach out:</p>
+  <ul>
+    <li><strong>GitHub:</strong> <a href="https://github.com/fiksr/inkreader" target="_blank">github.com/fiksr/inkreader</a></li>
+    <li><strong>Developer:</strong> Fiksr (<code>contact@fikser.xyz</code>)</li>
+  </ul>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - InkReader</title>
+    <style>
+        :root {
+            --bg-color: #fcfcfc;
+            --text-color: #1a1a1a;
+            --card-bg: #ffffff;
+            --border-color: #e5e5e5;
+            --accent: #2563eb;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #e0e0e0;
+                --card-bg: #1e1e1e;
+                --border-color: #2c2c2c;
+                --accent: #60a5fa;
+            }
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        h1 { font-size: 2rem; margin-top: 0; }
+        h2 { font-size: 1.3rem; margin-top: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+        h3 { font-size: 1.1rem; margin-top: 1.2rem; }
+        p, li { font-size: 0.95rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        th {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        code {
+            background: rgba(0,0,0,0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: #888; font-size: 0.85rem; margin-bottom: 24px; }
+        .badge {
+            display: inline-block;
+            background: #10b981;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>InkReader Privacy Policy</h1>
+    <div class="meta">Last Updated: October 6, 2026 &bull; <span class="badge">Offline-First &bull; Zero Telemetry</span></div>
+
+    <p><strong>InkReader</strong> is an offline-first Android e-reader application developed by <strong>Fiksr</strong>. We believe your reading habits, library, annotations, and queries are strictly personal. <strong>InkReader does not track you, does not collect analytics or device identifiers, and does not operate cloud servers that store your data.</strong></p>
+
+    <h2>1. Information We Do NOT Collect</h2>
+    <ul>
+        <li><strong>No Personal Identifiers:</strong> We do not collect names, email addresses, phone numbers, or advertising IDs.</li>
+        <li><strong>No Telemetry or Tracking:</strong> There are no third-party tracking or analytics SDKs embedded in the app.</li>
+        <li><strong>No Reading Analytics:</strong> What books you read, how frequently you read, your reading speed, and bookmarks remain entirely on your local device.</li>
+    </ul>
+
+    <h2>2. Data Handled Locally on Your Device</h2>
+    <ul>
+        <li><strong>E-books & Documents:</strong> Imported EPUB files are kept in private local app storage.</li>
+        <li><strong>Reading Progress & Stats:</strong> Bookmarks, reading heatmaps, words-per-minute calculations, and annotations are saved in your local database.</li>
+        <li><strong>Custom Files:</strong> User-imported fonts (<code>.ttf</code>/<code>.otf</code>) and ambient sound tracks remain on your local storage.</li>
+    </ul>
+
+    <h2>3. Network Connections & Third-Party AI Providers</h2>
+    <p>Network activity only occurs when you intentionally trigger features that interact with external services:</p>
+    
+    <h3>A. AI Reading Companion</h3>
+    <ul>
+        <li><strong>Direct HTTPS Connection:</strong> When you use AI features (e.g. "Catch Me Up" summaries or character explanations), requests are sent directly from your device to your chosen provider (Google Gemini, Groq, OpenAI, or DeepSeek/OpenRouter). There is no intermediary proxy.</li>
+        <li><strong>API Key Storage:</strong> Your API keys are saved on-device in private <code>SharedPreferences</code> and never shared with third parties.</li>
+        <li><strong>Context Sent:</strong> Only the required excerpt (book title, author, chapter, and text chunk) is sent to complete the requested prompt.</li>
+    </ul>
+
+    <h3>B. Offline Neural TTS Voice Models</h3>
+    <ul>
+        <li>Voice models (Supertonic, Kokoro, Piper) are downloaded on-demand from public repositories (such as GitHub / Hugging Face releases).</li>
+        <li>Once downloaded, <strong>all speech synthesis runs 100% offline on your device CPU</strong>. No audio or text is sent to cloud servers during reading.</li>
+    </ul>
+
+    <h3>C. OPDS Catalogs & Cloud Sync</h3>
+    <ul>
+        <li>If you connect to OPDS catalogs (e.g. Standard Ebooks, Calibre) or sync services (BookOrbit, KoSync), network communication occurs directly between your device and that specific server address.</li>
+    </ul>
+
+    <h2>4. Android Permissions</h2>
+    <table>
+        <thead>
+            <tr><th>Permission</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>INTERNET</code></td><td>User-triggered AI queries, OPDS browsing, sync, and one-time TTS voice downloads.</td></tr>
+            <tr><td><code>ACCESS_NETWORK_STATE</code></td><td>Checks internet connectivity prior to downloads or sync requests.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>5. Contact & Open Source</h2>
+    <p>For questions or issues regarding this privacy policy, visit our project repository:</p>
+    <p><a href="https://github.com/fiksr/inkreader" target="_blank" rel="noopener">GitHub: github.com/fiksr/inkreader</a></p>
+</div>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.data
+package com.fiksr.inkreader.data
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -320,9 +320,6 @@ Task: Provide a brief, insightful explanation of this passage:
                 })
             }
             put("contents", contentsArr)
-            put("generationConfig", JSONObject().apply {
-                put("temperature", settings.temperature.toDouble())
-            })
         }
 
         val url = URL(endpoint)

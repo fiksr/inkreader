@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.ui.reader
+package com.fiksr.inkreader.ui.reader
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -58,6 +58,20 @@ fun AiCompanionSheet(
     var inputText by remember { mutableStateOf("") }
     var isGenerating by remember { mutableStateOf(false) }
     var activeModeTitle by remember { mutableStateOf("✦ AI Reading Companion") }
+
+    // Auto-load cached recap if available and no initial query provided
+    LaunchedEffect(bookTitle, currentChapterIndex) {
+        if (initialQuery.isNullOrBlank() && messages.isEmpty()) {
+            val cached = aiService.getCachedCatchMeUp(bookTitle, currentChapterIndex)
+            if (!cached.isNullOrBlank()) {
+                activeModeTitle = "📖 Catch Me Up (Saved)"
+                messages = listOf(
+                    AiChatMessage("user", "Catch me up on what happened so far"),
+                    AiChatMessage("ai", cached)
+                )
+            }
+        }
+    }
 
     // Execute initial query if provided (e.g. from selecting text in reader)
     LaunchedEffect(initialQuery) {
@@ -211,11 +225,16 @@ fun AiCompanionSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Catch Me Up
+                    val hasCached = !aiService.getCachedCatchMeUp(bookTitle, currentChapterIndex).isNullOrBlank()
+                    val isShowingCatchMeUp = activeModeTitle.contains("Catch Me Up")
+                    val isRegenerate = hasCached && isShowingCatchMeUp && messages.size >= 2
+
                     Surface(
                         onClick = {
+                            val force = isRegenerate
                             isGenerating = true
-                            activeModeTitle = "📖 Catch Me Up"
-                            messages = listOf(AiChatMessage("user", "Catch me up on what happened so far"))
+                            activeModeTitle = if (force) "📖 Catch Me Up (Regenerating…)" else "📖 Catch Me Up"
+                            messages = listOf(AiChatMessage("user", if (force) "Regenerate catch me up recap" else "Catch me up on what happened so far"))
                             scope.launch {
                                 val res = aiService.generateCatchMeUp(
                                     bookTitle = bookTitle,
@@ -224,10 +243,12 @@ fun AiCompanionSheet(
                                     currentChapterIndex = currentChapterIndex,
                                     totalChapters = totalChapters,
                                     bookProgressPercent = bookProgressPercent,
-                                    recentExcerpt = currentExcerpt
+                                    recentExcerpt = currentExcerpt,
+                                    forceRefresh = force
                                 )
                                 isGenerating = false
                                 if (res.isSuccess) {
+                                    activeModeTitle = "📖 Catch Me Up"
                                     messages = messages + AiChatMessage("ai", res.getOrDefault("No recap generated."))
                                 } else {
                                     messages = messages + AiChatMessage("ai", "Error: ${res.exceptionOrNull()?.message}")
@@ -244,8 +265,13 @@ fun AiCompanionSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text("📖", fontSize = 13.sp)
-                            Text("Catch Me Up", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = colors.textPrimary)
+                            Text(if (isRegenerate) "🔄" else "📖", fontSize = 13.sp)
+                            Text(
+                                text = if (isRegenerate) "Regenerate Recap" else if (hasCached) "Catch Me Up (Saved)" else "Catch Me Up",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = colors.textPrimary
+                            )
                         }
                     }
 

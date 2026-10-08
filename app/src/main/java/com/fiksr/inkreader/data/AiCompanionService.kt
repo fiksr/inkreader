@@ -113,6 +113,22 @@ class AiCompanionService(private val context: Context) {
         }
     }
 
+    fun getCachedCatchMeUp(bookTitle: String, currentChapterIndex: Int): String? {
+        val key = "recap_${bookTitle.trim().hashCode()}_ch_${currentChapterIndex}"
+        val cached = prefs.getString(key, null)
+        return if (cached.isNullOrBlank()) null else cached
+    }
+
+    fun saveCachedCatchMeUp(bookTitle: String, currentChapterIndex: Int, recap: String) {
+        val key = "recap_${bookTitle.trim().hashCode()}_ch_${currentChapterIndex}"
+        prefs.edit().putString(key, recap.trim()).apply()
+    }
+
+    fun clearCachedCatchMeUp(bookTitle: String, currentChapterIndex: Int) {
+        val key = "recap_${bookTitle.trim().hashCode()}_ch_${currentChapterIndex}"
+        prefs.edit().remove(key).apply()
+    }
+
     suspend fun generateCatchMeUp(
         bookTitle: String,
         author: String,
@@ -120,8 +136,16 @@ class AiCompanionService(private val context: Context) {
         currentChapterIndex: Int = 1,
         totalChapters: Int = 1,
         bookProgressPercent: Int = 0,
-        recentExcerpt: String
+        recentExcerpt: String,
+        forceRefresh: Boolean = false
     ): Result<String> = withContext(Dispatchers.IO) {
+        if (!forceRefresh) {
+            val cached = getCachedCatchMeUp(bookTitle, currentChapterIndex)
+            if (!cached.isNullOrBlank()) {
+                return@withContext Result.success(cached)
+            }
+        }
+
         val chapterInfo = if (totalChapters > 1) {
             "Chapter $currentChapterIndex of $totalChapters (\"$currentChapterTitle\", approximately $bookProgressPercent% through the book)"
         } else {
@@ -147,7 +171,14 @@ CRITICAL RULES:
 - Format with clean bullet points starting with '•'. Keep it punchy, engaging, and easy to read on an e-reader screen.
 """.trimIndent()
 
-        callAi(prompt, systemInstruction = "You are a knowledgeable literary reading companion providing spoiler-free narrative plot recaps for readers returning to their book.")
+        val result = callAi(prompt, systemInstruction = "You are a knowledgeable literary reading companion providing spoiler-free narrative plot recaps for readers returning to their book.")
+        if (result.isSuccess) {
+            val text = result.getOrDefault("")
+            if (text.isNotBlank()) {
+                saveCachedCatchMeUp(bookTitle, currentChapterIndex, text)
+            }
+        }
+        result
     }
 
     suspend fun explainCharacter(
@@ -322,39 +353,83 @@ Task: Provide a brief, insightful explanation of this passage:
             put("contents", contentsArr)
         }
 
-        val url = URL(endpoint)
-        val conn = (url.openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            setRequestProperty("User-Agent", "InkReader/1.0")
-            doOutput = true
-            connectTimeout = 12000
-            readTimeout = 18000
-        }
+        val maxAttempts = 3
+        var lastException: Exception? = null
 
-        OutputStreamWriter(conn.outputStream, "UTF-8").use {
-            it.write(rootJson.toString())
-            it.flush()
-        }
-
-        val code = conn.responseCode
-        if (code in 200..299) {
-            val responseText = BufferedReader(InputStreamReader(conn.inputStream, "UTF-8")).use { it.readText() }
-            val resObj = JSONObject(responseText)
-            val candidates = resObj.optJSONArray("candidates")
-            if (candidates != null && candidates.length() > 0) {
-                val content = candidates.getJSONObject(0).optJSONObject("content")
-                val parts = content?.optJSONArray("parts")
-                if (parts != null && parts.length() > 0) {
-                    val text = parts.getJSONObject(0).optString("text")
-                    return Result.success(text.trim())
+        for (attempt in 1..maxAttempts) {
+            var conn: HttpURLConnection? = null
+            try {
+                val url = URL(endpoint)
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                    setRequestProperty("User-Agent", "InkReader/1.0")
+                    doOutput = true
+                    connectTimeout = 20000
+                    readTimeout = 35000
                 }
+
+                OutputStreamWriter(conn.outputStream, "UTF-8").use {
+                    it.write(rootJson.toString())
+                    it.flush()
+                }
+
+                val code = conn.responseCode
+                if (code in 200..299) {
+                    val responseText = BufferedReader(InputStreamReader(conn.inputStream, "UTF-8")).use { it.readText() }
+                    val resObj = JSONObject(responseText)
+                    val candidates = resObj.optJSONArray("candidates")
+                    if (candidates != null && candidates.length() > 0) {
+                        val content = candidates.getJSONObject(0).optJSONObject("content")
+                        val parts = content?.optJSONArray("parts")
+                        if (parts != null && parts.length() > 0) {
+                            val text = parts.getJSONObject(0).optString("text")
+                            return Result.success(text.trim())
+                        }
+                    }
+                    return Result.success("No response generated.")
+                } else if (code == 503 || code == 429) {
+                    val err = BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream, "UTF-8")).use { it.readText() }
+                    lastException = if (code == 503) {
+                        Exception("Gemini servers are busy (503). Retrying...")
+                    } else {
+                        Exception("Gemini rate limit reached (429). Retrying...")
+                    }
+                    if (attempt < maxAttempts) {
+                        Thread.sleep(attempt * 1500L)
+                        continue
+                    } else {
+                        val friendlyMsg = if (code == 503) {
+                            "Gemini servers are currently overloaded (HTTP 503). Retried $maxAttempts times. Please try again in a moment."
+                        } else {
+                            "Gemini free rate limit reached (HTTP 429). Please wait a moment and try again."
+                        }
+                        return Result.failure(Exception(friendlyMsg))
+                    }
+                } else {
+                    val err = BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream, "UTF-8")).use { it.readText() }
+                    return Result.failure(Exception("Gemini API Error ($code): $err"))
+                }
+            } catch (e: java.net.SocketTimeoutException) {
+                lastException = Exception("Gemini request timed out. Free servers are experiencing heavy load.")
+                if (attempt < maxAttempts) {
+                    Thread.sleep(attempt * 1200L)
+                    continue
+                }
+            } catch (e: java.io.IOException) {
+                lastException = e
+                if (attempt < maxAttempts) {
+                    Thread.sleep(attempt * 1200L)
+                    continue
+                }
+            } catch (e: Exception) {
+                return Result.failure(e)
+            } finally {
+                conn?.disconnect()
             }
-            return Result.success("No response generated.")
-        } else {
-            val err = BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream, "UTF-8")).use { it.readText() }
-            return Result.failure(Exception("Gemini API Error ($code): $err"))
         }
+
+        return Result.failure(lastException ?: Exception("Failed to contact Gemini after $maxAttempts attempts."))
     }
 
     private fun callOpenAiCompatible(
@@ -386,36 +461,63 @@ Task: Provide a brief, insightful explanation of this passage:
             put("temperature", settings.temperature.toDouble())
         }
 
-        val url = URL(endpoint)
-        val conn = (url.openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json; charset=UTF-8")
-            setRequestProperty("Authorization", "Bearer ${settings.apiKey.trim()}")
-            setRequestProperty("User-Agent", "InkReader/1.0")
-            doOutput = true
-            connectTimeout = 12000
-            readTimeout = 18000
-        }
+        val maxAttempts = 2
+        var lastException: Exception? = null
 
-        OutputStreamWriter(conn.outputStream, "UTF-8").use {
-            it.write(rootJson.toString())
-            it.flush()
-        }
+        for (attempt in 1..maxAttempts) {
+            var conn: HttpURLConnection? = null
+            try {
+                val url = URL(endpoint)
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                    setRequestProperty("Authorization", "Bearer ${settings.apiKey.trim()}")
+                    setRequestProperty("User-Agent", "InkReader/1.0")
+                    doOutput = true
+                    connectTimeout = 20000
+                    readTimeout = 35000
+                }
 
-        val code = conn.responseCode
-        if (code in 200..299) {
-            val responseText = BufferedReader(InputStreamReader(conn.inputStream, "UTF-8")).use { it.readText() }
-            val resObj = JSONObject(responseText)
-            val choices = resObj.optJSONArray("choices")
-            if (choices != null && choices.length() > 0) {
-                val message = choices.getJSONObject(0).optJSONObject("message")
-                val content = message?.optString("content") ?: ""
-                return Result.success(content.trim())
+                OutputStreamWriter(conn.outputStream, "UTF-8").use {
+                    it.write(rootJson.toString())
+                    it.flush()
+                }
+
+                val code = conn.responseCode
+                if (code in 200..299) {
+                    val responseText = BufferedReader(InputStreamReader(conn.inputStream, "UTF-8")).use { it.readText() }
+                    val resObj = JSONObject(responseText)
+                    val choices = resObj.optJSONArray("choices")
+                    if (choices != null && choices.length() > 0) {
+                        val message = choices.getJSONObject(0).optJSONObject("message")
+                        val content = message?.optString("content") ?: ""
+                        return Result.success(content.trim())
+                    }
+                    return Result.success("No response generated.")
+                } else if (code == 503 || code == 429) {
+                    val err = BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream, "UTF-8")).use { it.readText() }
+                    lastException = Exception("${settings.provider.displayName} API Error ($code): $err")
+                    if (attempt < maxAttempts) {
+                        Thread.sleep(attempt * 1500L)
+                        continue
+                    } else {
+                        return Result.failure(Exception("${settings.provider.displayName} servers busy ($code). Please try again."))
+                    }
+                } else {
+                    val err = BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream, "UTF-8")).use { it.readText() }
+                    return Result.failure(Exception("${settings.provider.displayName} API Error ($code): $err"))
+                }
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < maxAttempts) {
+                    Thread.sleep(1000L)
+                    continue
+                }
+            } finally {
+                conn?.disconnect()
             }
-            return Result.success("No response generated.")
-        } else {
-            val err = BufferedReader(InputStreamReader(conn.errorStream ?: conn.inputStream, "UTF-8")).use { it.readText() }
-            return Result.failure(Exception("${settings.provider.displayName} API Error ($code): $err"))
         }
+
+        return Result.failure(lastException ?: Exception("Failed to contact ${settings.provider.displayName}."))
     }
 }

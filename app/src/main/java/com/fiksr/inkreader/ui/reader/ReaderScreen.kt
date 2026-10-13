@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.ui.reader
+package com.fiksr.inkreader.ui.reader
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -106,21 +106,36 @@ fun paginateChapter(
         if (startOffset >= totalLen) break
 
         val remainingText = chapterText.substring(startOffset)
-        // Measure up to 6000 chars for instant layout calculation
-        val candidateText = if (remainingText.length > 6000) remainingText.substring(0, 6000) else remainingText
+        var candidateLen = minOf(remainingText.length, 12000)
+        var candidateText = remainingText.substring(0, candidateLen)
 
-        val measureResult = textMeasurer.measure(
+        var measureResult = textMeasurer.measure(
             text = AnnotatedString(candidateText),
             style = textStyle,
             constraints = Constraints(maxWidth = widthPx)
         )
 
-        val lineCount = measureResult.lineCount
-        if (lineCount == 0) break
-
         // Safety headroom: ensure line descenders and line spacing have 16px breathing room
         // so lines never get clipped horizontally at the bottom of the page
         val safeHeightPx = (heightPx - 16).coerceAtLeast(60)
+
+        // On tablets or large screens, candidateText may fit entirely within safeHeightPx
+        // without overflowing. Expand dynamically until it overflows safeHeightPx or exhausts remainingText!
+        while (measureResult.lineCount > 0 &&
+            measureResult.getLineBottom(measureResult.lineCount - 1) <= safeHeightPx &&
+            candidateLen < remainingText.length
+        ) {
+            candidateLen = minOf(remainingText.length, candidateLen * 2)
+            candidateText = remainingText.substring(0, candidateLen)
+            measureResult = textMeasurer.measure(
+                text = AnnotatedString(candidateText),
+                style = textStyle,
+                constraints = Constraints(maxWidth = widthPx)
+            )
+        }
+
+        val lineCount = measureResult.lineCount
+        if (lineCount == 0) break
 
         var lastFittingLine = -1
         for (line in 0 until lineCount) {
@@ -1671,6 +1686,21 @@ fun TableOfContentsSheet(
 ) {
     val colors = LocalEInkColors.current
 
+    val effectiveToc = remember(book) {
+        if (book.toc.isNotEmpty()) {
+            book.toc
+        } else {
+            book.chapters.mapIndexed { idx, ch ->
+                com.fiksr.inkreader.model.TocItem(
+                    title = ch.title,
+                    targetChapterIndex = idx,
+                    targetCharOffset = 0,
+                    level = 0
+                )
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1694,7 +1724,7 @@ fun TableOfContentsSheet(
         }
 
         Text(
-            text = "${book.title} • ${book.chapters.size} Chapters",
+            text = "${book.title} • ${effectiveToc.size} Sections",
             fontFamily = FontFamily.Monospace,
             fontSize = 12.sp,
             color = colors.muted
@@ -1708,36 +1738,42 @@ fun TableOfContentsSheet(
                 .fillMaxWidth()
                 .padding(vertical = 12.dp)
         ) {
-            itemsIndexed(book.chapters) { idx, chapter ->
-                val isCurrent = idx == currentChapterIndex
+            itemsIndexed(effectiveToc) { _, item ->
+                val isCurrent = item.targetChapterIndex == currentChapterIndex
+                val indentDp = (item.level.coerceIn(0, 4) * 16).dp
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(start = indentDp)
                         .border(
                             width = if (isCurrent) 1.5.dp else 0.5.dp,
                             color = if (isCurrent) colors.text else colors.border,
                             shape = RoundedCornerShape(4.dp)
                         )
                         .background(if (isCurrent) colors.background else colors.card)
-                        .clickable { onChapterSelect(idx) }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .clickable { onChapterSelect(item.targetChapterIndex) }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = chapter.title,
+                            text = item.title,
                             fontFamily = BookFontFamily,
-                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 15.sp,
+                            fontWeight = if (isCurrent || item.level == 0) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = if (item.level == 0) 15.sp else 14.sp,
                             color = colors.text
                         )
-                        Text(
-                            text = "${chapter.wordCount} words",
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp,
-                            color = colors.muted
-                        )
+                        val targetChapter = book.chapters.getOrNull(item.targetChapterIndex)
+                        if (targetChapter != null) {
+                            Text(
+                                text = "${targetChapter.wordCount} words",
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 11.sp,
+                                color = colors.muted
+                            )
+                        }
                     }
 
                     if (isCurrent) {
@@ -1748,7 +1784,7 @@ fun TableOfContentsSheet(
                             fontSize = 12.sp,
                             color = colors.text
                         )
-                    } else if (idx < currentChapterIndex) {
+                    } else if (item.targetChapterIndex < currentChapterIndex) {
                         Text(
                             text = "✓ Read",
                             fontFamily = FontFamily.Monospace,

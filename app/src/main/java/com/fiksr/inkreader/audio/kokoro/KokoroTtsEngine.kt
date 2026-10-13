@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.audio.kokoro
+package com.fiksr.inkreader.audio.kokoro
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -290,11 +290,11 @@ class KokoroTtsEngine(
         // 2. PLAYBACK CONSUMER COROUTINE
         playbackJob = scope.launch(Dispatchers.IO) {
             try {
-                initAudioTrack()
-                val track = audioTrack ?: return@launch
-
                 for (audio in channel) {
                     if (!isActive) break
+
+                    initAudioTrack()
+                    val track = audioTrack ?: break
 
                     _state.value = _state.value.copy(
                         currentSentenceIndex = audio.index,
@@ -471,6 +471,10 @@ class KokoroTtsEngine(
     }
 
     private fun initAudioTrack() {
+        if (audioTrack != null) {
+            try { audioTrack?.play() } catch (_: Exception) {}
+            return
+        }
         val sampleRate = 24000
         val minBufSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT)
         val bufSize = maxOf(minBufSize * 2, 4096 * 4)

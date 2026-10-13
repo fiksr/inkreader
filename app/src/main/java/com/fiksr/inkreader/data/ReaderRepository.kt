@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.data
+package com.fiksr.inkreader.data
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -156,6 +156,7 @@ class ReaderRepository(private val context: Context) {
             .toMutableList()
 
         val customJson = prefs.getString("custom_books_meta", null)
+        var needsCleanSave = false
         if (customJson != null) {
             try {
                 val array = JSONArray(customJson)
@@ -164,8 +165,8 @@ class ReaderRepository(private val context: Context) {
                     val filePath = obj.optString("filePath", "")
                     val file = if (filePath.isNotEmpty()) File(filePath) else null
                     if (file != null && file.exists()) {
-                        val parsed = EpubParser.parseEpub(context, Uri.fromFile(file))
-                        if (parsed != null) {
+                        val parsed = EpubParser.parseEpubFile(context, file, obj.getString("id"))
+                        if (parsed != null && parsed.chapters.isNotEmpty() && !parsed.chapters.any { it.content.contains("could not be parsed into readable text") }) {
                             val restored = parsed.copy(
                                 id = obj.getString("id"),
                                 progressPercent = obj.optInt("progressPercent", 0),
@@ -173,10 +174,18 @@ class ReaderRepository(private val context: Context) {
                                 currentPageIndex = obj.optInt("currentPageIndex", 0)
                             )
                             initial.add(0, restored)
+                        } else {
+                            try { if (file.exists()) file.delete() } catch (_: Exception) {}
+                            needsCleanSave = true
                         }
+                    } else {
+                        needsCleanSave = true
                     }
                 }
             } catch (_: Exception) {}
+        }
+        if (needsCleanSave) {
+            saveCustomBooks(initial)
         }
         return initial
     }
@@ -270,7 +279,7 @@ class ReaderRepository(private val context: Context) {
 
     fun importEpub(uri: Uri): Book? {
         val book = EpubParser.parseEpub(context, uri)
-        if (book != null) {
+        if (book != null && book.chapters.isNotEmpty() && book.chapters.any { it.content.isNotBlank() }) {
             val list = _books.value.toMutableList()
             list.removeAll { it.id == book.id || (it.title == book.title && it.author == book.author) }
             list.add(0, book)

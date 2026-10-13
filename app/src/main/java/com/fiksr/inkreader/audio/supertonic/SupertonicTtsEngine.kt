@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.audio.supertonic
+package com.fiksr.inkreader.audio.supertonic
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -36,7 +36,8 @@ data class SupertonicChunk(
 data class SupertonicChunkAudio(
     val index: Int,
     val chunk: SupertonicChunk,
-    val samples: FloatArray
+    val samples: FloatArray,
+    val sampleRate: Int
 )
 
 fun splitSupertonicSentenceSpans(text: String): List<SupertonicSentenceSpan> {
@@ -119,8 +120,9 @@ class SupertonicTtsEngine(
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private var offlineTts: OfflineTts? = null
-    private var sampleRate: Int = 24000
+    private var sampleRate: Int = 44100
     private var audioTrack: AudioTrack? = null
+    private var currentTrackSampleRate: Int = 0
     private var audioChannel: Channel<SupertonicChunkAudio>? = null
     private var playbackJob: Job? = null
     private var producerJob: Job? = null
@@ -257,10 +259,11 @@ class SupertonicTtsEngine(
                     _state.value = _state.value.copy(isSynthesizing = false)
 
                     if (samples != null && samples.isNotEmpty() && isActive && !channel.isClosedForSend) {
-                        val audioDurationMs = (samples.size.toFloat() / sampleRate.toFloat() * 1000f).toLong()
+                        val currentSr = sampleRate
+                        val audioDurationMs = (samples.size.toFloat() / currentSr.toFloat() * 1000f).toLong()
                         val rtf = if (audioDurationMs > 0) genTime.toFloat() / audioDurationMs else 0f
-                        Log.d(TAG, "Chunk $idx rendered in ${genTime}ms (${audioDurationMs}ms audio, RTF ${"%.2f".format(rtf)})")
-                        channel.send(SupertonicChunkAudio(idx, chunk, samples))
+                        Log.d(TAG, "Chunk $idx rendered in ${genTime}ms (${audioDurationMs}ms audio @ ${currentSr}Hz, RTF ${"%.2f".format(rtf)})")
+                        channel.send(SupertonicChunkAudio(idx, chunk, samples, currentSr))
                     }
                 }
             } catch (_: CancellationException) {
@@ -294,11 +297,11 @@ class SupertonicTtsEngine(
         // 3. CONSUMER COROUTINE: Plays audio without interruptions
         playbackJob = scope.launch(Dispatchers.IO) {
             try {
-                initAudioTrack()
-                val track = audioTrack ?: return@launch
-
                 for (audio in channel) {
                     if (!isActive) break
+
+                    initAudioTrack(audio.sampleRate)
+                    val track = audioTrack ?: break
 
                     _state.value = _state.value.copy(
                         currentSentenceIndex = audio.index,
@@ -309,8 +312,9 @@ class SupertonicTtsEngine(
 
                     playSamples(track, audio.samples)
 
-                    if (isActive && naturalSilenceSamples.isNotEmpty()) {
-                        playSamples(track, naturalSilenceSamples)
+                    if (isActive) {
+                        val silenceSamples = FloatArray(audio.sampleRate * 200 / 1000)
+                        playSamples(track, silenceSamples)
                     }
                 }
 
@@ -483,8 +487,14 @@ class SupertonicTtsEngine(
         }
     }
 
-    private fun initAudioTrack() {
-        val minBufSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT)
+    private fun initAudioTrack(rate: Int = sampleRate) {
+        if (audioTrack != null && currentTrackSampleRate == rate) {
+            try { audioTrack?.play() } catch (_: Exception) {}
+            return
+        }
+        stopAudioTrack()
+        currentTrackSampleRate = rate
+        val minBufSize = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT)
         val bufSize = maxOf(minBufSize * 2, 4096 * 4)
 
         audioTrack = AudioTrack.Builder()
@@ -497,7 +507,7 @@ class SupertonicTtsEngine(
             .setAudioFormat(
                 AudioFormat.Builder()
                     .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                    .setSampleRate(sampleRate)
+                    .setSampleRate(rate)
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build()
             )
@@ -518,6 +528,7 @@ class SupertonicTtsEngine(
             }
         } catch (_: Exception) {}
         audioTrack = null
+        currentTrackSampleRate = 0
     }
 
     private fun createOneShotAudioTrack(sampleCount: Int): AudioTrack {

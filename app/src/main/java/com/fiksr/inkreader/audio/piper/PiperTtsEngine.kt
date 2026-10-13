@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.audio.piper
+package com.fiksr.inkreader.audio.piper
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -199,13 +199,12 @@ class PiperTtsEngine(
         // 2. PLAYBACK CONSUMER COROUTINE
         playbackJob = scope.launch(Dispatchers.IO) {
             try {
-                val sampleRate = offlineTts?.sampleRate() ?: 22050
-                initAudioTrack(sampleRate)
-                val track = audioTrack ?: return@launch
-                val silenceSamples = FloatArray(sampleRate * 180 / 1000) // 180ms natural pause
-
                 for (audio in channel) {
                     if (!isActive) break
+
+                    initAudioTrack(audio.sampleRate)
+                    val track = audioTrack ?: break
+                    val silenceSamples = FloatArray(audio.sampleRate * 180 / 1000) // 180ms natural pause
 
                     _state.value = _state.value.copy(
                         currentSentenceIndex = audio.index,
@@ -434,6 +433,7 @@ class PiperTtsEngine(
             }
         } catch (_: Exception) {}
         audioTrack = null
+        currentTrackSampleRate = 0
     }
 
     fun release() {

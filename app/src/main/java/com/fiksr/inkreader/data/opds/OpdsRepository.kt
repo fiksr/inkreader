@@ -1,4 +1,4 @@
-﻿package com.fiksr.inkreader.data.opds
+package com.fiksr.inkreader.data.opds
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -66,13 +66,27 @@ class OpdsRepository(private val context: Context) {
             } catch (_: Exception) {}
         }
 
-        // Auto-migrate any stale local IP for BookOrbit default catalog
+        // Auto-migrate any stale catalog URLs
         var changed = false
         val migrated = list.map { cat ->
-            if (cat.id == "bookorbit_default" && (cat.url.contains("192.168.1.100") || (cat.url.endsWith("/opds") && !cat.url.contains("buks.lol")))) {
-                changed = true
-                cat.copy(url = "https://buks.lol/api/v1/opds")
-            } else cat
+            when {
+                cat.id == "bookorbit_default" && (cat.url.contains("192.168.1.100") || (cat.url.endsWith("/opds") && !cat.url.contains("buks.lol"))) -> {
+                    changed = true
+                    cat.copy(url = "https://buks.lol/api/v1/opds")
+                }
+                cat.id == "standard_ebooks" && (cat.url.contains("/opds/all") || cat.url == "https://standardebooks.org/opds") -> {
+                    changed = true
+                    cat.copy(
+                        url = "https://standardebooks.org/feeds/opds",
+                        description = "Free public domain ebooks. Requires Patrons Circle account (enter email as username, password blank)."
+                    )
+                }
+                cat.id == "gutenberg" && cat.url.contains("m.gutenberg.org") -> {
+                    changed = true
+                    cat.copy(url = "https://www.gutenberg.org/ebooks/search.opds/")
+                }
+                else -> cat
+            }
         }
         if (changed) {
             saveCatalogs(migrated)
@@ -111,14 +125,14 @@ class OpdsRepository(private val context: Context) {
             OpdsCatalog(
                 id = "standard_ebooks",
                 name = "Standard Ebooks",
-                url = "https://standardebooks.org/opds/all",
-                description = "Free, public domain ebooks carefully typeset and edited.",
+                url = "https://standardebooks.org/feeds/opds",
+                description = "Free public domain ebooks. Requires Patrons Circle account (enter email as username, password blank).",
                 isDefault = true
             ),
             OpdsCatalog(
                 id = "gutenberg",
                 name = "Project Gutenberg",
-                url = "https://m.gutenberg.org/ebooks.opds/",
+                url = "https://www.gutenberg.org/ebooks/search.opds/",
                 description = "Over 70,000 free historical public domain books.",
                 isDefault = true
             ),
@@ -165,39 +179,71 @@ class OpdsRepository(private val context: Context) {
     suspend fun fetchFeed(url: String, username: String = "", password: String = ""): Result<OpdsFeed> =
         withContext(Dispatchers.IO) {
             try {
-                var normalizedUrl = url.trim()
-                if (normalizedUrl.endsWith("/api/v1/koreader")) {
-                    normalizedUrl = normalizedUrl.substringBeforeLast("/api/v1/koreader") + "/api/v1/opds"
-                } else if (normalizedUrl.endsWith("/api/v1/koreader/")) {
-                    normalizedUrl = normalizedUrl.substringBeforeLast("/api/v1/koreader/") + "/api/v1/opds"
+                var currentUrl = url.trim()
+                if (currentUrl.endsWith("/api/v1/koreader")) {
+                    currentUrl = currentUrl.substringBeforeLast("/api/v1/koreader") + "/api/v1/opds"
+                } else if (currentUrl.endsWith("/api/v1/koreader/")) {
+                    currentUrl = currentUrl.substringBeforeLast("/api/v1/koreader/") + "/api/v1/opds"
+                } else if (currentUrl.contains("standardebooks.org/opds/all")) {
+                    currentUrl = "https://standardebooks.org/feeds/opds"
                 }
 
-                val conn = (URL(normalizedUrl).openConnection() as HttpURLConnection).apply {
-                    if (this is HttpsURLConnection) {
-                        NetworkUtils.configureSsl(this, acceptCustomCerts = true)
-                    }
-                    requestMethod = "GET"
-                    connectTimeout = 12000
-                    readTimeout = 12000
-                    setRequestProperty("User-Agent", "InkReader/1.0 (Android; E-Ink)")
-                    setRequestProperty("Accept", "application/atom+xml,application/xml,text/xml,*/*")
+                var conn: HttpURLConnection? = null
+                var redirects = 0
 
-                    if (username.isNotBlank() || password.isNotBlank()) {
-                        val auth = "$username:$password"
-                        val encoded = Base64.encodeToString(auth.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
-                        setRequestProperty("Authorization", "Basic $encoded")
+                while (redirects < 5) {
+                    val u = URL(currentUrl)
+                    val c = (u.openConnection() as HttpURLConnection).apply {
+                        if (this is HttpsURLConnection) {
+                            NetworkUtils.configureSsl(this, acceptCustomCerts = true)
+                        }
+                        instanceFollowRedirects = false
+                        requestMethod = "GET"
+                        connectTimeout = 15000
+                        readTimeout = 20000
+                        setRequestProperty("User-Agent", "KOReader/2024.04 (Android; E-Ink; InkReader)")
+                        setRequestProperty("Accept", "application/atom+xml,application/xml,text/xml,application/opds+json,*/*")
+
+                        if (username.isNotBlank() || password.isNotBlank()) {
+                            val auth = "$username:$password"
+                            val encoded = Base64.encodeToString(auth.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+                            setRequestProperty("Authorization", "Basic $encoded")
+                        }
                     }
+
+                    val code = c.responseCode
+                    if (code in 300..399) {
+                        val location = c.getHeaderField("Location")
+                        if (!location.isNullOrBlank()) {
+                            currentUrl = if (location.startsWith("http://", ignoreCase = true) || location.startsWith("https://", ignoreCase = true)) {
+                                location
+                            } else {
+                                "${u.protocol}://${u.host}${if (u.port != -1 && u.port != 80 && u.port != 443) ":${u.port}" else ""}${if (location.startsWith("/")) "" else "/"}$location"
+                            }
+                            redirects++
+                            continue
+                        }
+                    }
+
+                    conn = c
+                    break
                 }
 
-                val code = conn.responseCode
+                val finalConn = conn ?: return@withContext Result.failure(Exception("Failed to connect to catalog"))
+                val code = finalConn.responseCode
+
                 if (code in 200..299) {
-                    val feed = conn.inputStream.use { stream ->
-                        OpdsParser.parseFeed(stream, url)
+                    val feed = finalConn.inputStream.use { stream ->
+                        OpdsParser.parseFeed(stream, currentUrl)
                     }
                     Result.success(feed)
+                } else if (code == 401 && currentUrl.contains("standardebooks.org")) {
+                    Result.failure(Exception("Standard Ebooks requires a Patrons Circle account. Tap edit to enter your Patrons Circle email as username (leave password blank)."))
+                } else if (code == 403 && currentUrl.contains("standardebooks.org")) {
+                    Result.failure(Exception("Standard Ebooks access denied. Make sure URL is https://standardebooks.org/feeds/opds and enter your Patrons Circle email."))
                 } else {
-                    val err = conn.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
-                    Result.failure(Exception("HTTP $code: $err"))
+                    val err = finalConn.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+                    Result.failure(Exception("HTTP $code: ${err.take(150)}"))
                 }
             } catch (e: Exception) {
                 Result.failure(e)

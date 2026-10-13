@@ -1,4 +1,13 @@
-﻿package com.fiksr.inkreader.model
+package com.fiksr.inkreader.model
+
+data class TocItem(
+    val id: String = "",
+    val title: String,
+    val href: String = "",
+    val targetChapterIndex: Int = 0,
+    val targetCharOffset: Int = 0,
+    val level: Int = 0
+)
 
 data class Chapter(
     val id: String,
@@ -18,7 +27,8 @@ data class Book(
     val currentPageIndex: Int = 0,
     val chapters: List<Chapter>,
     val isCustomImported: Boolean = false,
-    val filePath: String? = null
+    val filePath: String? = null,
+    val toc: List<TocItem> = emptyList()
 ) {
     val totalWords: Int get() = chapters.sumOf { it.wordCount }
     val currentChapter: Chapter get() = chapters.getOrElse(currentChapterIndex) { chapters.firstOrNull() ?: Chapter("0", "Empty", "") }
